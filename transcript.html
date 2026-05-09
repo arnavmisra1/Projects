@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Transcript Q&A Analyzer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0d0d0d;
+    --surface:   #161616;
+    --surface2:  #1f1f1f;
+    --border:    #2a2a2a;
+    --amber:     #f59e0b;
+    --amber-dim: #92400e;
+    --green:     #10b981;
+    --red:       #ef4444;
+    --blue:      #60a5fa;
+    --text:      #e8e3d9;
+    --text-dim:  #6b7280;
+    --text-mid:  #9ca3af;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    padding: 40px 20px;
+    background-image: radial-gradient(ellipse 60% 40% at 50% -10%, #1a1200 0%, transparent 70%);
+  }
+
+  .container { max-width: 900px; margin: 0 auto; }
+
+  /* Header */
+  .header { text-align: center; margin-bottom: 48px; }
+  .header-eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--amber);
+    margin-bottom: 14px;
+    opacity: 0;
+    animation: fadeUp 0.5s 0.1s forwards;
+  }
+  .header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--text);
+    opacity: 0;
+    animation: fadeUp 0.5s 0.2s forwards;
+  }
+  .header h1 span { color: var(--amber); }
+  .header p {
+    font-size: 14px;
+    color: var(--text-mid);
+    margin-top: 10px;
+    font-weight: 300;
+    opacity: 0;
+    animation: fadeUp 0.5s 0.3s forwards;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Layout */
+  .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media(max-width: 700px) { .layout { grid-template-columns: 1fr; } }
+
+  /* Panel */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    opacity: 0;
+    animation: fadeUp 0.5s forwards;
+  }
+  .panel:nth-child(1) { animation-delay: 0.4s; }
+  .panel:nth-child(2) { animation-delay: 0.5s; }
+
+  .panel-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface2);
+  }
+  .panel-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--amber);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .panel-title::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--amber);
+  }
+  .char-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  textarea {
+    width: 100%;
+    height: 340px;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    padding: 20px;
+    resize: none;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  textarea::placeholder { color: var(--text-dim); }
+
+  /* Analyze button */
+  .btn-wrap { padding: 16px 20px; border-top: 1px solid var(--border); background: var(--surface2); }
+  .analyze-btn {
+    width: 100%;
+    padding: 13px;
+    background: var(--amber);
+    color: #000;
+    border: none;
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .analyze-btn:hover { background: #fbbf24; transform: translateY(-1px); }
+  .analyze-btn:active { transform: translateY(0); }
+  .analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* Results panel */
+  .results-body { padding: 20px; height: 390px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+
+  /* Empty state */
+  .empty-state {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: var(--text-dim);
+    text-align: center;
+  }
+  .empty-icon { font-size: 40px; opacity: 0.3; }
+  .empty-state p { font-size: 12px; line-height: 1.6; font-family: 'JetBrains Mono', monospace; }
+
+  /* Loading */
+  .loading-state {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+  }
+  .spinner {
+    width: 32px; height: 32px;
+    border: 2px solid var(--border);
+    border-top-color: var(--amber);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-state p { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-dim); }
+
+  /* Summary cards */
+  .summary-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .summary-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+  }
+  .summary-card.questions { border-color: rgba(245,158,11,0.3); }
+  .summary-card.answers   { border-color: rgba(16,185,129,0.3); }
+  .summary-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 36px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .summary-card.questions .summary-num { color: var(--amber); }
+  .summary-card.answers   .summary-num { color: var(--green); }
+  .summary-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    color: var(--text-dim);
+  }
+  .unanswered-note {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--red);
+    background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.2);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+
+  /* QA list */
+  .qa-section-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  .qa-item {
+    margin-bottom: 12px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    animation: fadeUp 0.3s both;
+  }
+  .qa-item:nth-child(2) { animation-delay: 0.05s; }
+  .qa-item:nth-child(3) { animation-delay: 0.10s; }
+  .qa-item:nth-child(4) { animation-delay: 0.15s; }
+  .qa-item:nth-child(5) { animation-delay: 0.20s; }
+
+  .qa-question {
+    background: rgba(245,158,11,0.06);
+    border-left: 3px solid var(--amber);
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--text);
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .qa-question-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    background: var(--amber-dim);
+    color: var(--amber);
+    border-radius: 4px;
+    padding: 1px 5px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    letter-spacing: 0.06em;
+  }
+  .qa-answer {
+    background: rgba(16,185,129,0.04);
+    border-left: 3px solid var(--green);
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--text-mid);
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .qa-answer-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    background: rgba(16,185,129,0.15);
+    color: var(--green);
+    border-radius: 4px;
+    padding: 1px 5px;
+    flex-shrink: 0;
+    margin-top: 1px;
+    letter-spacing: 0.06em;
+  }
+  .qa-no-answer {
+    background: rgba(239,68,68,0.04);
+    border-left: 3px solid var(--red);
+    padding: 8px 12px;
+    font-size: 11px;
+    color: var(--red);
+    font-family: 'JetBrains Mono', monospace;
+    opacity: 0.7;
+  }
+
+  /* Error */
+  .error-state { text-align: center; padding: 30px 20px; }
+  .error-state .err-icon { font-size: 32px; margin-bottom: 10px; }
+  .error-state p { font-size: 12px; color: var(--red); font-family: 'JetBrains Mono', monospace; }
+
+  /* Full-width stats bar at bottom */
+  .stats-bar {
+    margin-top: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    opacity: 0;
+    animation: fadeUp 0.5s 0.6s forwards;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .stats-bar-item { display: flex; align-items: center; gap: 6px; }
+  .stats-bar-dot { width: 6px; height: 6px; border-radius: 50%; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="header-eyebrow">AI-POWERED · TRANSCRIPT ANALYSIS</div>
+    <h1>Q&A <span>Detector</span></h1>
+    <p>Paste any video transcript — the system extracts every question and its answer.</p>
+  </div>
+
+  <div class="layout">
+
+    <!-- INPUT PANEL -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">TRANSCRIPT INPUT</div>
+        <div class="char-count" id="charCount">0 chars</div>
+      </div>
+      <textarea
+        id="transcriptInput"
+        placeholder="Paste your video transcript here...
+
+Example:
+Host: What is IoT?
+Guest: IoT stands for Internet of Things — it refers to devices connected to the internet.
+Host: How is it used in water monitoring?
+Guest: Sensors collect data and send it to the cloud via Wi-Fi or LoRa..."
+      ></textarea>
+      <div class="btn-wrap">
+        <button class="analyze-btn" id="analyzeBtn" onclick="analyze()">
+          <span id="btnText">⚡ ANALYZE TRANSCRIPT</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- RESULTS PANEL -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">RESULTS</div>
+        <div class="char-count" id="resultsMeta">—</div>
+      </div>
+      <div class="results-body" id="resultsBody">
+        <div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <p>Results will appear here<br>after analysis.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="stats-bar" id="statsBar">
+    <div class="stats-bar-item"><span class="stats-bar-dot" style="background:var(--amber)"></span>Questions detected in amber</div>
+    <div class="stats-bar-item"><span class="stats-bar-dot" style="background:var(--green)"></span>Answers detected in green</div>
+    <div class="stats-bar-item"><span class="stats-bar-dot" style="background:var(--red)"></span>Unanswered questions in red</div>
+    <div class="stats-bar-item" style="color:var(--text-mid);">Powered by Claude Sonnet</div>
+  </div>
+
+</div>
+
+<script>
+const textarea = document.getElementById('transcriptInput');
+const charCount = document.getElementById('charCount');
+const analyzeBtn = document.getElementById('analyzeBtn');
+const btnText = document.getElementById('btnText');
+const resultsBody = document.getElementById('resultsBody');
+const resultsMeta = document.getElementById('resultsMeta');
+
+textarea.addEventListener('input', () => {
+  const n = textarea.value.length;
+  charCount.textContent = n.toLocaleString() + ' chars';
+});
+
+async function analyze() {
+  const transcript = textarea.value.trim();
+  if (!transcript) {
+    alert('Please paste a transcript first.');
+    return;
+  }
+
+  // Loading state
+  analyzeBtn.disabled = true;
+  btnText.textContent = '⏳ ANALYZING...';
+  resultsMeta.textContent = 'Processing...';
+  resultsBody.innerHTML = `
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Identifying questions & answers...</p>
+    </div>`;
+
+  const prompt = `You are an expert transcript analyzer. Analyze the following video transcript and extract ALL questions and their corresponding answers.
+
+Return ONLY a valid JSON object in this exact format (no markdown, no explanation, just JSON):
+{
+  "total_questions": <number>,
+  "total_answers": <number>,
+  "unanswered_count": <number>,
+  "pairs": [
+    {
+      "id": 1,
+      "question": "<exact question from transcript>",
+      "answer": "<corresponding answer from transcript, or null if unanswered>",
+      "answered": true/false
+    }
+  ]
+}
+
+Rules:
+- Extract questions even if they don't end with '?' (rhetorical, implied, interview-style)
+- If a question has no answer in the transcript, set answer to null and answered to false
+- Keep questions and answers as they appear in the transcript
+- Do not invent or paraphrase
+
+TRANSCRIPT:
+${transcript}`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await response.json();
+    const raw = data.content.map(b => b.text || '').join('');
+    // Strip possible markdown fences
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const result = JSON.parse(clean);
+    renderResults(result);
+
+  } catch (err) {
+    resultsBody.innerHTML = `
+      <div class="error-state">
+        <div class="err-icon">⚠️</div>
+        <p>Analysis failed.<br>${err.message}</p>
+      </div>`;
+    resultsMeta.textContent = 'Error';
+  } finally {
+    analyzeBtn.disabled = false;
+    btnText.textContent = '⚡ ANALYZE TRANSCRIPT';
+  }
+}
+
+function renderResults(r) {
+  resultsMeta.textContent = `${r.total_questions}Q · ${r.total_answers}A`;
+
+  let html = `
+    <div class="summary-row">
+      <div class="summary-card questions">
+        <div class="summary-num">${r.total_questions}</div>
+        <div class="summary-label">QUESTIONS FOUND</div>
+      </div>
+      <div class="summary-card answers">
+        <div class="summary-num">${r.total_answers}</div>
+        <div class="summary-label">ANSWERS FOUND</div>
+      </div>
+    </div>`;
+
+  if (r.unanswered_count > 0) {
+    html += `<div class="unanswered-note">⚠ ${r.unanswered_count} question${r.unanswered_count > 1 ? 's' : ''} left unanswered in transcript</div>`;
+  }
+
+  html += `<div class="qa-section-title">EXTRACTED Q&A PAIRS — ${r.pairs.length} TOTAL</div>`;
+
+  r.pairs.forEach((pair, i) => {
+    html += `
+      <div class="qa-item">
+        <div class="qa-question">
+          <span class="qa-question-tag">Q${pair.id}</span>
+          <span>${escHtml(pair.question)}</span>
+        </div>
+        ${pair.answered
+          ? `<div class="qa-answer"><span class="qa-answer-tag">ANS</span><span>${escHtml(pair.answer)}</span></div>`
+          : `<div class="qa-no-answer">— No answer found in transcript</div>`
+        }
+      </div>`;
+  });
+
+  resultsBody.innerHTML = html;
+}
+
+function escHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
