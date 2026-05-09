@@ -35,7 +35,7 @@
 
   .container { max-width: 900px; margin: 0 auto; }
 
-  /* Header */
+  
   .header { text-align: center; margin-bottom: 48px; }
   .header-eyebrow {
     font-family: 'JetBrains Mono', monospace;
@@ -70,11 +70,11 @@
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  /* Layout */
+  
   .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
   @media(max-width: 700px) { .layout { grid-template-columns: 1fr; } }
 
-  /* Panel */
+  
   .panel {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -132,7 +132,7 @@
   }
   textarea::placeholder { color: var(--text-dim); }
 
-  /* Analyze button */
+  
   .btn-wrap { padding: 16px 20px; border-top: 1px solid var(--border); background: var(--surface2); }
   .analyze-btn {
     width: 100%;
@@ -156,10 +156,10 @@
   .analyze-btn:active { transform: translateY(0); }
   .analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-  /* Results panel */
+  
   .results-body { padding: 20px; height: 390px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
 
-  /* Empty state */
+  
   .empty-state {
     height: 100%;
     display: flex;
@@ -173,7 +173,7 @@
   .empty-icon { font-size: 40px; opacity: 0.3; }
   .empty-state p { font-size: 12px; line-height: 1.6; font-family: 'JetBrains Mono', monospace; }
 
-  /* Loading */
+  
   .loading-state {
     height: 100%;
     display: flex;
@@ -192,7 +192,7 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   .loading-state p { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-dim); }
 
-  /* Summary cards */
+  
   .summary-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
   .summary-card {
     background: var(--surface2);
@@ -230,7 +230,7 @@
     text-align: center;
   }
 
-  /* QA list */
+  
   .qa-section-title {
     font-family: 'JetBrains Mono', monospace;
     font-size: 10px;
@@ -304,12 +304,12 @@
     opacity: 0.7;
   }
 
-  /* Error */
+  
   .error-state { text-align: center; padding: 30px 20px; }
   .error-state .err-icon { font-size: 32px; margin-bottom: 10px; }
   .error-state p { font-size: 12px; color: var(--red); font-family: 'JetBrains Mono', monospace; }
 
-  /* Full-width stats bar at bottom */
+  
   .stats-bar {
     margin-top: 20px;
     background: var(--surface);
@@ -365,7 +365,7 @@ Guest: Sensors collect data and send it to the cloud via Wi-Fi or LoRa..."
       </div>
     </div>
 
-    <!-- RESULTS PANEL -->
+   
     <div class="panel">
       <div class="panel-header">
         <div class="panel-title">RESULTS</div>
